@@ -1,19 +1,17 @@
+# Render configuration updated for multi-service single container
 services:
   - type: web
     name: ai-crypto-trading
     env: docker
     plan: free
     dockerfilePath: ./Dockerfile
-    buildCommand: npm run build
     healthCheckPath: /api/health
+    buildCommand: npm run build --prefix backend && npm run build --prefix frontend
     envVars:
       - key: JWT_SECRET
-        fromDatabase: false
         value: ""
       - key: ENCRYPTION_KEY
-        fromDatabase: false
         value: ""
       - key: DATABASE_URL
-        fromDatabase: false
         value: "file:./data/dev.db"
     autoDeploy: true

@@ -6,8 +6,12 @@ import fs from 'fs';
 import prisma from './prismaClient';
 import binanceRouter from './routes/binance';
 import botRouter from './routes/bot';
+import authRouter from './routes/auth';
+import adminRouter from './routes/admin';
+import settingsRouter from './routes/settings';
 import http from 'http';
 import { setupWSServer } from './wsServer';
+import { startSchedulers } from './utils/scheduler';
 
 dotenv.config();
 
@@ -31,8 +35,11 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+app.use('/api/auth', authRouter);
 app.use('/api/binance', binanceRouter);
 app.use('/api/bot', botRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/app', settingsRouter);
 
 // Serve frontend static files
 const frontDist = path.join(process.cwd(),'frontend','dist');
@@ -43,6 +50,9 @@ if(fs.existsSync(frontDist)){
 
 const server = http.createServer(app);
 setupWSServer(server);
+
+// start schedulers
+startSchedulers();
 
 // Start server
 server.listen(PORT, () => {

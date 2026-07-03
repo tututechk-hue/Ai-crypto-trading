@@ -1,10 +1,16 @@
+// Add frontend route links in App
 import React, { useEffect, useState } from 'react'
 import BinanceConnect from './pages/BinanceConnect'
 import ScannerPage from './pages/Scanner'
 import LiveTrades from './pages/LiveTrades'
+import Wallet from './pages/Wallet'
+import Settings from './pages/Settings'
+import AIStats from './pages/AIStats'
+import TradeHistory from './pages/TradeHistory'
+import AdminDashboard from './pages/AdminDashboard'
 
 export default function App(){
-  const [page, setPage] = useState<'dashboard'|'connect'|'scanner'|'live'>('dashboard');
+  const [page, setPage] = useState<'dashboard'|'connect'|'scanner'|'live'|'wallet'|'settings'|'aistats'|'history'|'admin'>('dashboard');
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100">
@@ -15,7 +21,11 @@ export default function App(){
             <button className="mr-2 px-3 py-1 bg-slate-700 rounded" onClick={()=>setPage('dashboard')}>Dashboard</button>
             <button className="mr-2 px-3 py-1 bg-slate-600 rounded" onClick={()=>setPage('scanner')}>AI Scanner</button>
             <button className="mr-2 px-3 py-1 bg-sky-600 rounded" onClick={()=>setPage('live')}>Live Trades</button>
-            <button className="px-3 py-1 bg-amber-600 text-slate-900 rounded" onClick={()=>setPage('connect')}>Binance Connect</button>
+            <button className="mr-2 px-3 py-1 bg-indigo-600 rounded" onClick={()=>setPage('aistats')}>AI Stats</button>
+            <button className="mr-2 px-3 py-1 bg-emerald-600 rounded" onClick={()=>setPage('history')}>Trade History</button>
+            <button className="mr-2 px-3 py-1 bg-rose-600 rounded" onClick={()=>setPage('wallet')}>Wallet</button>
+            <button className="mr-2 px-3 py-1 bg-amber-600 text-slate-900 rounded" onClick={()=>setPage('connect')}>Binance Connect</button>
+            <button className="px-3 py-1 bg-slate-500 rounded" onClick={()=>setPage('settings')}>Settings</button>
           </nav>
         </header>
 
@@ -30,6 +40,11 @@ export default function App(){
           {page === 'connect' && <BinanceConnect />}
           {page === 'scanner' && <ScannerPage />}
           {page === 'live' && <LiveTrades />}
+          {page === 'wallet' && <Wallet />}
+          {page === 'settings' && <Settings />}
+          {page === 'aistats' && <AIStats />}
+          {page === 'history' && <TradeHistory />}
+          {page === 'admin' && <AdminDashboard />}
         </main>
       </div>
     </div>
