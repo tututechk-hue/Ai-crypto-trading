@@ -1,3 +1,4 @@
+// add klines route to binance routes
 import express from 'express';
 import prisma from '../prismaClient';
 import { encrypt } from '../utils/crypto';
@@ -72,6 +73,33 @@ router.post('/verify/:id', async (req,res)=>{
   }catch(e:any){
     res.status(500).json({ ok: false, error: e?.message || String(e) });
   }
+});
+
+// Klines proxy
+router.get('/klines', async (req,res)=>{
+  const { symbol, interval = '1m', limit = '500', accountId } = req.query as any;
+  if(!symbol) return res.status(400).json({ error: 'symbol required' });
+  try{
+    if(accountId){
+      const account = await prisma.binanceAccount.findUnique({ where: { id: Number(accountId) } });
+      if(!account) return res.status(404).json({ error: 'account not found' });
+      const { decrypt } = await import('../utils/crypto');
+      const encKey = process.env.ENCRYPTION_KEY!;
+      const apiKey = decrypt(account.encryptedApiKey, encKey);
+      const apiSecret = decrypt(account.encryptedApiSecret, encKey);
+      const client = new BinanceClient(apiKey, apiSecret, account.isTestnet);
+      const kl = await client.getKlines(symbol, interval, Number(limit));
+      return res.json(kl);
+    } else {
+      // public testnet endpoint (no auth required) - use testnet base
+      const base = process.env.BINANCE_TESTNET_API_BASE || 'https://testnet.binancefuture.com';
+      const url = `${base}/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+      const axios = (await import('axios')).default;
+      const res2 = await axios.get(url, { timeout: 10000 });
+      const data = res2.data.map((k:any[])=>({ openTime:k[0], open:parseFloat(k[1]), high:parseFloat(k[2]), low:parseFloat(k[3]), close:parseFloat(k[4]), volume:parseFloat(k[5]), closeTime:k[6] }));
+      return res.json(data);
+    }
+  }catch(e:any){ res.status(500).json({ error: e?.message || String(e) }); }
 });
 
 export default router;

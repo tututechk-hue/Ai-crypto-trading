@@ -49,14 +49,43 @@ export class BinanceClient {
     }));
   }
 
-  async createOrder(params: { symbol: string, side: 'BUY'|'SELL', type: string, quantity?: string, price?: string, reduceOnly?: boolean }){
+  async createOrder(params: { symbol: string, side: 'BUY'|'SELL', type: string, quantity?: string, price?: string, reduceOnly?: boolean, stopPrice?: string, closePosition?: boolean }){
     const ts = Date.now();
-    let qs = `symbol=${params.symbol}&side=${params.side}&type=${params.type}&timestamp=${ts}`;
-    if(params.quantity) qs += `&quantity=${params.quantity}`;
-    if(params.price) qs += `&price=${params.price}`;
-    if(params.reduceOnly) qs += `&reduceOnly=${params.reduceOnly}`;
+    let qsParts:string[] = [];
+    qsParts.push(`symbol=${params.symbol}`);
+    qsParts.push(`side=${params.side}`);
+    qsParts.push(`type=${params.type}`);
+    qsParts.push(`timestamp=${ts}`);
+    if(params.quantity) qsParts.push(`quantity=${params.quantity}`);
+    if(params.price) qsParts.push(`price=${params.price}`);
+    if(params.reduceOnly) qsParts.push(`reduceOnly=${params.reduceOnly}`);
+    if(params.stopPrice) qsParts.push(`stopPrice=${params.stopPrice}`);
+    if(params.closePosition) qsParts.push(`closePosition=${params.closePosition}`);
+    const qs = qsParts.join('&');
     const signature = this.sign(qs);
     const url = `${this.base}/fapi/v1/order?${qs}&signature=${signature}`;
+    const headers = { 'X-MBX-APIKEY': this.apiKey };
+    const res = await axios.post(url, {}, { headers, timeout: 15000 });
+    return res.data;
+  }
+
+  async createOrderRaw(body: any){
+    // helper to send POST body instead of querystring when needed
+    const ts = Date.now();
+    body.timestamp = ts;
+    const qs = Object.keys(body).map(k=>`${k}=${encodeURIComponent(body[k])}`).join('&');
+    const signature = this.sign(qs);
+    const url = `${this.base}/fapi/v1/order?${qs}&signature=${signature}`;
+    const headers = { 'X-MBX-APIKEY': this.apiKey };
+    const res = await axios.post(url, {}, { headers, timeout: 15000 });
+    return res.data;
+  }
+
+  async setLeverage(symbol:string, leverage:number){
+    const ts = Date.now();
+    const qs = `symbol=${symbol}&leverage=${leverage}&timestamp=${ts}`;
+    const signature = this.sign(qs);
+    const url = `${this.base}/fapi/v1/leverage?${qs}&signature=${signature}`;
     const headers = { 'X-MBX-APIKEY': this.apiKey };
     const res = await axios.post(url, {}, { headers, timeout: 10000 });
     return res.data;

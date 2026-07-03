@@ -1,4 +1,4 @@
-// Add frontend route links in App
+// add to App navigation and export
 import React, { useEffect, useState } from 'react'
 import BinanceConnect from './pages/BinanceConnect'
 import ScannerPage from './pages/Scanner'
@@ -8,9 +8,10 @@ import Settings from './pages/Settings'
 import AIStats from './pages/AIStats'
 import TradeHistory from './pages/TradeHistory'
 import AdminDashboard from './pages/AdminDashboard'
+import ChartPage from './pages/Chart'
 
 export default function App(){
-  const [page, setPage] = useState<'dashboard'|'connect'|'scanner'|'live'|'wallet'|'settings'|'aistats'|'history'|'admin'>('dashboard');
+  const [page, setPage] = useState<'dashboard'|'connect'|'scanner'|'live'|'wallet'|'settings'|'aistats'|'history'|'admin'|'chart'>('dashboard');
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100">
@@ -21,6 +22,7 @@ export default function App(){
             <button className="mr-2 px-3 py-1 bg-slate-700 rounded" onClick={()=>setPage('dashboard')}>Dashboard</button>
             <button className="mr-2 px-3 py-1 bg-slate-600 rounded" onClick={()=>setPage('scanner')}>AI Scanner</button>
             <button className="mr-2 px-3 py-1 bg-sky-600 rounded" onClick={()=>setPage('live')}>Live Trades</button>
+            <button className="mr-2 px-3 py-1 bg-indigo-600 rounded" onClick={()=>setPage('chart')}>Chart</button>
             <button className="mr-2 px-3 py-1 bg-indigo-600 rounded" onClick={()=>setPage('aistats')}>AI Stats</button>
             <button className="mr-2 px-3 py-1 bg-emerald-600 rounded" onClick={()=>setPage('history')}>Trade History</button>
             <button className="mr-2 px-3 py-1 bg-rose-600 rounded" onClick={()=>setPage('wallet')}>Wallet</button>
@@ -45,6 +47,7 @@ export default function App(){
           {page === 'aistats' && <AIStats />}
           {page === 'history' && <TradeHistory />}
           {page === 'admin' && <AdminDashboard />}
+          {page === 'chart' && <ChartPage />}
         </main>
       </div>
     </div>
