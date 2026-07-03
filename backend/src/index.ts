@@ -5,6 +5,9 @@ import path from 'path';
 import fs from 'fs';
 import prisma from './prismaClient';
 import binanceRouter from './routes/binance';
+import botRouter from './routes/bot';
+import http from 'http';
+import { setupWSServer } from './wsServer';
 
 dotenv.config();
 
@@ -29,6 +32,7 @@ app.get('/api/health', async (req, res) => {
 });
 
 app.use('/api/binance', binanceRouter);
+app.use('/api/bot', botRouter);
 
 // Serve frontend static files
 const frontDist = path.join(process.cwd(),'frontend','dist');
@@ -37,7 +41,10 @@ if(fs.existsSync(frontDist)){
   app.get('/', (req,res) => res.sendFile(path.join(frontDist,'index.html')));
 }
 
+const server = http.createServer(app);
+setupWSServer(server);
+
 // Start server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server started on port ${PORT}`);
 });
