@@ -1,0 +1,77 @@
+import express from 'express';
+import prisma from '../prismaClient';
+import { encrypt } from '../utils/crypto';
+import { BinanceClient } from '../services/binanceClient';
+
+const router = express.Router();
+
+// Connect Binance account - store encrypted keys and verify
+router.post('/connect', async (req, res) => {
+  try {
+    const { userId, name, apiKey, apiSecret, isTestnet } = req.body;
+    if(!userId || !apiKey || !apiSecret) return res.status(400).json({ error: 'missing parameters' });
+
+    const encKey = process.env.ENCRYPTION_KEY;
+    if(!encKey) return res.status(500).json({ error: 'server missing ENCRYPTION_KEY' });
+
+    const encryptedApiKey = encrypt(apiKey, encKey);
+    const encryptedApiSecret = encrypt(apiSecret, encKey);
+
+    const account = await prisma.binanceAccount.create({
+      data: {
+        userId: Number(userId),
+        name: name || 'default',
+        encryptedApiKey,
+        encryptedApiSecret,
+        isTestnet: Boolean(isTestnet),
+        verified: false
+      }
+    });
+
+    // Verify by calling Binance Testnet/live
+    const client = new BinanceClient(apiKey, apiSecret, Boolean(isTestnet));
+    try{
+      await client.getFuturesBalance();
+      // mark verified
+      await prisma.binanceAccount.update({ where: { id: account.id }, data: { verified: true } });
+      return res.json({ success: true, accountId: account.id, verified: true });
+    }catch(e:any){
+      // leave unverified but stored
+      console.error('binance verification failed', e?.message || e);
+      return res.status(202).json({ success: true, accountId: account.id, verified: false, warning: 'verification failed - check API permissions or keys' });
+    }
+
+  } catch (e:any){
+    console.error(e);
+    res.status(500).json({ error: String(e) });
+  }
+});
+
+// List accounts for user
+router.get('/accounts/:userId', async (req, res) => {
+  const userId = Number(req.params.userId);
+  const accounts = await prisma.binanceAccount.findMany({ where: { userId } });
+  res.json(accounts);
+});
+
+// Simple verify endpoint for a stored account
+router.post('/verify/:id', async (req,res)=>{
+  const id = Number(req.params.id);
+  const account = await prisma.binanceAccount.findUnique({ where: { id } });
+  if(!account) return res.status(404).json({ error: 'not found' });
+  const encKey = process.env.ENCRYPTION_KEY;
+  if(!encKey) return res.status(500).json({ error: 'server missing ENCRYPTION_KEY' });
+  // decrypt
+  const { decrypt } = await import('../utils/crypto');
+  const apiKey = decrypt(account.encryptedApiKey, encKey);
+  const apiSecret = decrypt(account.encryptedApiSecret, encKey);
+  const client = new BinanceClient(apiKey, apiSecret, account.isTestnet);
+  try{
+    const balance = await client.getFuturesBalance();
+    res.json({ ok: true, balance });
+  }catch(e:any){
+    res.status(500).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
+export default router;

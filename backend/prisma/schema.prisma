@@ -16,6 +16,7 @@ model User {
   updatedAt  DateTime @updatedAt
   accounts   BinanceAccount[]
   trades     Trade[]
+  aiRecords  AIRecord[]
 }
 
 model BinanceAccount {
@@ -25,6 +26,7 @@ model BinanceAccount {
   encryptedApiKey     String
   encryptedApiSecret  String
   isTestnet           Boolean  @default(true)
+  verified            Boolean  @default(false)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   user                User     @relation(fields: [userId], references: [id])
@@ -47,8 +49,41 @@ model Trade {
   user          User     @relation(fields: [userId], references: [id])
 }
 
-model Setting {
-  id      Int    @id @default(autoincrement())
-  key     String @unique
-  value   String
+model Signal {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  symbol     String
+  timeframe  String
+  score      Int
+  payload    Json
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model AIRecord {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  tradeId   Int?
+  features  Json
+  label     String?
+  score     Int?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  level     String
+  message   String
+  meta      Json?
+  createdAt DateTime @default(now())
+}
+
+model BotInstance {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  status    String   @default("stopped")
+  mode      String   @default("testnet")
+  startedAt DateTime?
+  stoppedAt DateTime?
 }

@@ -3,7 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
-import { PrismaClient } from '@prisma/client';
+import prisma from './prismaClient';
+import binanceRouter from './routes/binance';
 
 dotenv.config();
 
@@ -16,9 +17,6 @@ app.use(express.json());
 const dataDir = path.join(process.cwd(),'data');
 if(!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
-// Prisma client
-const prisma = new PrismaClient();
-
 // Simple health check
 app.get('/api/health', async (req, res) => {
   try {
@@ -30,17 +28,14 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+app.use('/api/binance', binanceRouter);
+
 // Serve frontend static files
 const frontDist = path.join(process.cwd(),'frontend','dist');
 if(fs.existsSync(frontDist)){
   app.use(express.static(frontDist));
   app.get('/', (req,res) => res.sendFile(path.join(frontDist,'index.html')));
 }
-
-// Placeholder route groups (to be implemented)
-app.use('/api/auth', (req,res)=>res.status(501).json({error:'auth not implemented yet'}));
-app.use('/api/binance', (req,res)=>res.status(501).json({error:'binance not implemented yet'}));
-app.use('/api/trades', (req,res)=>res.status(501).json({error:'trades not implemented yet'}));
 
 // Start server
 app.listen(PORT, () => {
